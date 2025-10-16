@@ -6,20 +6,16 @@ Program is standalone, so simply place the executable where you need it and use 
 Command Line Arguments: ``CrowbarCommandLineDecomp.exe -p "Path\To\File.mdl" -o "Path\To\Output\Folder"``
 
 ## Known Uses
-Is your program useful and also utilizing Crowbar Command Line? Feel free to make an issue ticket and specify that you want your program to be added to this list (so that I dont confuse your ticket with questions or bugs)! A basic desription and link will be included from your program/repository below. 
-
-- [Opifex Development Toolkit](https://github.com/UltraTechX/Opifex-Toolkit) by me
+Is your program useful and also utilizing Crowbar Command Line? Feel free to make an issue ticket and specify that you want your program to be added to this list (so that I dont confuse your ticket with questions or bugs)! A basic desription and link will be included from your program/repository below.
 
 ## Questions?
 Feel free to open an issue ticket and I will respond when I can.
 
 ## Credits
 Credit to ZeqMacaw [(Profile can be found here)](https://steamcommunity.com/id/zeqmacaw) for creating Crowbar and developing/providing the source code that this project is based off of.
-[If you would like a GUI version of this program, the original Crowbar program and main steam group can be found here.](https://steamcommunity.com/groups/CrowbarTool)
+[If you would like a GUI version of this program, the original Crowbar program and main steam group can be found here.](https://steamcommunity.com/groups/CrowbarTool) and UltraTechX [(Profile can be found here)](https://github.com/UltraTechX/Crowbar-Command-Line) for the original command-line project, I only updated to the last Crowbar version.
 
-Credit to Rainyan for fixing VS compilation.
-
-Credit to myself aswell for adding the ability to work off command line arguments. [My profile can be found here](https://steamcommunity.com/id/okfay)
+Original author Steam Profile here. [My profile can be found here](https://steamcommunity.com/id/okfay)
 
 ## License
 This repository and program is licensed with the Creative Commons Attribution-ShareAlike 3.0 Unported License
