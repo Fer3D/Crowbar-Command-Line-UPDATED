@@ -15,7 +15,7 @@ Feel free to open an issue ticket and I will respond when I can.
 Credit to ZeqMacaw [(Profile can be found here)](https://steamcommunity.com/id/zeqmacaw) for creating Crowbar and developing/providing the source code that this project is based off of.
 [If you would like a GUI version of this program, the original Crowbar program and main steam group can be found here.](https://steamcommunity.com/groups/CrowbarTool) and UltraTechX [(Profile can be found here)](https://github.com/UltraTechX/Crowbar-Command-Line) for the original command-line project, I only updated to the last Crowbar version.
 
-Original author Steam Profile here. [My profile can be found here](https://steamcommunity.com/id/okfay)
+Original author Steam Profile here. [The profile can be found here](https://steamcommunity.com/id/okfay)
 
 ## License
 This repository and program is licensed with the Creative Commons Attribution-ShareAlike 3.0 Unported License
