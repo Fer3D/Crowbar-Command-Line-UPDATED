@@ -1,4 +1,5 @@
 Imports System.IO
+Imports System.Linq
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Xml.Serialization
@@ -6,29 +7,6 @@ Imports System.Xml.Serialization
 Public Class FileManager
 
 #Region "Read Methods"
-
-	Public Shared Function FilePathHasInvalidChars(ByVal path As String) As Boolean
-		Dim ret As Boolean = False
-
-		If String.IsNullOrEmpty(path) Then
-			ret = True
-		Else
-			Try
-				Dim fileName As String = System.IO.Path.GetFileName(path)
-				Dim fileDirectory As String = System.IO.Path.GetDirectoryName(path)
-			Catch generatedExceptionName As ArgumentException
-				' Path functions will throw this 
-				' if path contains invalid chars
-				ret = True
-			End Try
-			ret = (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
-			If ret = False Then
-				ret = (path.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
-			End If
-		End If
-
-		Return ret
-	End Function
 
 	Public Shared Function ReadNullTerminatedString(ByVal inputFileReader As BinaryReader) As String
 		Dim text As New StringBuilder()
@@ -38,6 +16,20 @@ Public Class FileManager
 		End While
 		' Read the null character.
 		inputFileReader.ReadChar()
+		Return text.ToString()
+	End Function
+
+	Public Shared Function ReadNullTerminatedString(ByVal inputFileReader As BufferedBinaryReader) As String
+		Dim text As New StringBuilder()
+		text.Length = 0
+		Dim aCharacter As Char
+		While True
+			aCharacter = inputFileReader.ReadChar()
+			If aCharacter = ControlChars.NullChar Then
+				Exit While
+			End If
+			text.Append(aCharacter)
+		End While
 		Return text.ToString()
 	End Function
 
@@ -296,6 +288,29 @@ Public Class FileManager
 #End Region
 
 #Region "Path"
+
+	Public Shared Function FilePathHasInvalidChars(ByVal path As String) As Boolean
+		Dim ret As Boolean = False
+
+		If String.IsNullOrEmpty(path) Then
+			ret = True
+		Else
+			Try
+				Dim fileName As String = System.IO.Path.GetFileName(path)
+				Dim fileDirectory As String = System.IO.Path.GetDirectoryName(path)
+			Catch generatedExceptionName As ArgumentException
+				' Path functions will throw this
+				' if path contains invalid chars
+				ret = True
+			End Try
+			ret = (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+			If ret = False Then
+				ret = (path.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
+			End If
+		End If
+
+		Return ret
+	End Function
 
 	Public Shared Function GetPathFileNameWithoutExtension(ByVal pathFileName As String) As String
 		Try

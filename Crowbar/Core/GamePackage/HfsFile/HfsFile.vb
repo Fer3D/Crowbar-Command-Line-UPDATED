@@ -7,9 +7,11 @@ Public Class HfsFile
 
 #Region "Creation and Destruction"
 
-	Public Sub New(ByVal packageDirectoryFileReader As BinaryReader, ByVal packageFileReader As BinaryReader, ByVal hfsFileData As HfsFileData)
-		Me.thePackageDirectoryInputFileReader = packageDirectoryFileReader
-		Me.theInputFileReader = packageFileReader
+	Public Sub New(ByVal packageDirectoryFileReader As BufferedBinaryReader, ByVal packageFileReader As BufferedBinaryReader, ByVal hfsFileData As HfsFileData)
+		If TypeOf packageFileReader Is BufferedBinaryReader Then
+			Me.thePackageDirectoryInputFileReader = Nothing
+			Me.theInputFileReader = Nothing
+		End If
 		Me.theHfsFileData = hfsFileData
 	End Sub
 

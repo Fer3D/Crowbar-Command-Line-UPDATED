@@ -7,7 +7,7 @@ Public Class GmaFile
 
 #Region "Creation and Destruction"
 
-	Public Sub New(ByVal archiveDirectoryFileReader As BinaryReader, ByVal archiveFileReader As BinaryReader, ByVal gmaFileData As GmaFileData)
+	Public Sub New(ByVal archiveDirectoryFileReader As BufferedBinaryReader, ByVal archiveFileReader As BufferedBinaryReader, ByVal gmaFileData As GmaFileData)
 		Me.theArchiveDirectoryInputFileReader = archiveDirectoryFileReader
 		Me.theInputFileReader = archiveFileReader
 		Me.theGmaFileData = gmaFileData
@@ -28,13 +28,10 @@ Public Class GmaFile
 #Region "Methods"
 
 	Public Overrides Sub ReadHeader()
-		'Dim inputFileStreamPosition As Long
 		Dim fileOffsetStart As Long
 		Dim fileOffsetEnd As Long
-		'Dim fileOffsetStart2 As Long
-		'Dim fileOffsetEnd2 As Long
 
-		fileOffsetStart = Me.theInputFileReader.BaseStream.Position
+		fileOffsetStart = Me.theInputFileReader.Position
 
 		Me.theGmaFileData.id = Me.theInputFileReader.ReadChars(4)
 		Me.theGmaFileData.version = Me.theInputFileReader.ReadByte()
@@ -59,9 +56,9 @@ Public Class GmaFile
 		Me.theGmaFileData.addonAuthor = FileManager.ReadNullTerminatedString(Me.theInputFileReader)
 		Me.theGmaFileData.addonVersion = Me.theInputFileReader.ReadUInt32()
 
-		'Me.theGmaFileData.theDirectoryOffset = Me.theInputFileReader.BaseStream.Position
+		'Me.theGmaFileData.theDirectoryOffset = Me.theInputFileReader.Position
 
-		fileOffsetEnd = Me.theInputFileReader.BaseStream.Position - 1
+		fileOffsetEnd = Me.theInputFileReader.Position - 1
 		Me.theGmaFileData.theFileSeekLog.Add(fileOffsetStart, fileOffsetEnd, "GMA File Header")
 	End Sub
 
@@ -165,7 +162,7 @@ Public Class GmaFile
 				entryDataOutputText.Clear()
 			End While
 
-			Me.theGmaFileData.theFileDataOffset = Me.theInputFileReader.BaseStream.Position
+			Me.theGmaFileData.theFileDataOffset = Me.theInputFileReader.Position
 		Catch ex As Exception
 			Dim debug As Integer = 4242
 		End Try
@@ -185,7 +182,7 @@ Public Class GmaFile
 					If entry.thePathFileName = "<addon.json>" Then
 						Me.WriteAddonJsonData()
 					Else
-						Me.theInputFileReader.BaseStream.Seek(Me.theGmaFileData.theFileDataOffset + entry.offset, SeekOrigin.Begin)
+						Me.theInputFileReader.Seek(Me.theGmaFileData.theFileDataOffset + entry.offset, SeekOrigin.Begin)
 						Dim bytes() As Byte
 						bytes = Me.theInputFileReader.ReadBytes(CInt(entry.size))
 						Me.theOutputFileWriter.Write(bytes)
@@ -231,8 +228,8 @@ Public Class GmaFile
 
 #Region "Data"
 
-	Private theArchiveDirectoryInputFileReader As BinaryReader
-	Private theInputFileReader As BinaryReader
+	Private theArchiveDirectoryInputFileReader As BufferedBinaryReader
+	Private theInputFileReader As BufferedBinaryReader
 	Private theOutputFileWriter As BinaryWriter
 	Private theGmaFileData As GmaFileData
 

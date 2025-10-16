@@ -7,7 +7,7 @@ Public Class ApkFile
 
 #Region "Creation and Destruction"
 
-	Public Sub New(ByVal packageDirectoryFileReader As BinaryReader, ByVal packageFileReader As BinaryReader, ByVal apkFileData As ApkFileData)
+	Public Sub New(ByVal packageDirectoryFileReader As BufferedBinaryReader, ByVal packageFileReader As BufferedBinaryReader, ByVal apkFileData As ApkFileData)
 		Me.thePackageDirectoryInputFileReader = packageDirectoryFileReader
 		Me.theInputFileReader = packageFileReader
 		Me.theApkFileData = apkFileData
@@ -28,7 +28,7 @@ Public Class ApkFile
 #Region "Methods"
 
 	Public Overrides Sub ReadHeader()
-		Me.theInputFileReader.BaseStream.Seek(0, SeekOrigin.Begin)
+		Me.theInputFileReader.Seek(0, SeekOrigin.Begin)
 
 		Me.theApkFileData.id = Me.theInputFileReader.ReadUInt32()
 		Me.theApkFileData.offsetOfFiles = Me.theInputFileReader.ReadUInt32()
@@ -46,7 +46,7 @@ Public Class ApkFile
 			Dim entryDataOutputText As New StringBuilder
 			Dim pathFileName As String
 
-			Me.theInputFileReader.BaseStream.Seek(Me.theApkFileData.offsetOfDirectory, SeekOrigin.Begin)
+			Me.theInputFileReader.Seek(Me.theApkFileData.offsetOfDirectory, SeekOrigin.Begin)
 
 			For directoryEntryIndex As UInt32 = 0 To CUInt(Me.theApkFileData.fileCount - 1)
 				entry = New ApkDirectoryEntry()
@@ -88,7 +88,7 @@ Public Class ApkFile
 				Try
 					Me.theOutputFileWriter = New BinaryWriter(outputFileStream, System.Text.Encoding.ASCII)
 
-					Me.theInputFileReader.BaseStream.Seek(entry.offsetOfFile, SeekOrigin.Begin)
+					Me.theInputFileReader.Seek(entry.offsetOfFile, SeekOrigin.Begin)
 					Dim bytes() As Byte
 					bytes = Me.theInputFileReader.ReadBytes(CInt(entry.fileSize))
 					Me.theOutputFileWriter.Write(bytes)
@@ -117,8 +117,8 @@ Public Class ApkFile
 
 #Region "Data"
 
-	Private thePackageDirectoryInputFileReader As BinaryReader
-	Private theInputFileReader As BinaryReader
+	Private thePackageDirectoryInputFileReader As BufferedBinaryReader
+	Private theInputFileReader As BufferedBinaryReader
 	Private theOutputFileWriter As BinaryWriter
 	Private theApkFileData As ApkFileData
 

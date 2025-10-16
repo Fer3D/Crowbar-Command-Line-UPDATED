@@ -373,7 +373,7 @@ Public Class Unpacker
 			inputFileStream = New FileStream(packagePathFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
 			If inputFileStream IsNot Nothing Then
 				Try
-					Me.theInputFileReader = New BinaryReader(inputFileStream, System.Text.Encoding.ASCII)
+					Me.theInputFileReader = New BufferedBinaryReader(inputFileStream, System.Text.Encoding.ASCII)
 
 					'Dim vpkFile As New VpkFile(Me.theInputFileReader, aVpkFileData)
 					Dim vpkFile As BasePackageFile
@@ -528,7 +528,7 @@ Public Class Unpacker
 				inputFileStream = New FileStream(packageDirectoryPathFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
 				If inputFileStream IsNot Nothing Then
 					Try
-						Me.theInputFileReader = New BinaryReader(inputFileStream, System.Text.Encoding.ASCII)
+						Me.theInputFileReader = New BufferedBinaryReader(inputFileStream, System.Text.Encoding.ASCII)
 
 						Dim packageFile As BasePackageFile
 						packageFile = BasePackageFile.Create(packageDirectoryPathFileName, Me.theArchiveDirectoryInputFileReader, Me.theInputFileReader, aPackageFileData)
@@ -968,7 +968,7 @@ Public Class Unpacker
 					Me.theArchiveDirectoryInputFileStream = New FileStream(archiveDirectoryPathFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
 					If Me.theArchiveDirectoryInputFileStream IsNot Nothing Then
 						Try
-							Me.theArchiveDirectoryInputFileReader = New BinaryReader(Me.theArchiveDirectoryInputFileStream, System.Text.Encoding.ASCII)
+							Me.theArchiveDirectoryInputFileReader = New BufferedBinaryReader(Me.theArchiveDirectoryInputFileStream, System.Text.Encoding.ASCII)
 						Catch ex As Exception
 							Throw
 						End Try
@@ -1061,7 +1061,7 @@ Public Class Unpacker
 			inputFileStream = New FileStream(vpkPathFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
 			If inputFileStream IsNot Nothing Then
 				Try
-					Me.theInputFileReader = New BinaryReader(inputFileStream, System.Text.Encoding.ASCII)
+					Me.theInputFileReader = New BufferedBinaryReader(inputFileStream, System.Text.Encoding.ASCII)
 
 					'Dim packageDirectoryFileNameWithoutExtension As String = Path.GetFileNameWithoutExtension(vpkPathFileName)
 					Dim packageDirectoryFileNameWithoutExtension As String = Me.GetPackageDirectoryFileNameWithoutExtension(vpkPathFileName, vpkFileData)
@@ -1199,8 +1199,8 @@ Public Class Unpacker
 	Private theArchivePathFileNameToFileDataMap As SortedList(Of String, BasePackageFileData)
 	Private theArchiveDirectoryFileNamePrefix As String
 	Private theArchiveDirectoryInputFileStream As FileStream
-	Private theArchiveDirectoryInputFileReader As BinaryReader
-	Private theInputFileReader As BinaryReader
+	Private theArchiveDirectoryInputFileReader As BufferedBinaryReader
+	Private theInputFileReader As BufferedBinaryReader
 
 	Private thePackageDirectoryPathFileName As String
 	Private thePackageFileData As BasePackageFileData

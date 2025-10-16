@@ -5,7 +5,7 @@ Public MustInherit Class BasePackageFile
 
 #Region "Shared"
 
-	Public Shared Function Create(ByVal mdlPathFileName As String, ByVal packageDirectoryFileReader As BinaryReader, ByVal packageFileReader As BinaryReader, ByRef packageFileData As BasePackageFileData) As BasePackageFile
+	Public Shared Function Create(ByVal mdlPathFileName As String, ByVal packageDirectoryFileReader As BufferedBinaryReader, ByVal packageFileReader As BufferedBinaryReader, ByRef packageFileData As BasePackageFileData) As BasePackageFile
 		Dim packageFile As BasePackageFile = Nothing
 
 		Try

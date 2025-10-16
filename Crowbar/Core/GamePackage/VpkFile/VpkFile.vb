@@ -7,7 +7,7 @@ Public Class VpkFile
 
 #Region "Creation and Destruction"
 
-	Public Sub New(ByVal archiveDirectoryFileReader As BinaryReader, ByVal vpkFileReader As BinaryReader, ByVal vpkFileData As VpkFileData)
+	Public Sub New(ByVal archiveDirectoryFileReader As BufferedBinaryReader, ByVal vpkFileReader As BufferedBinaryReader, ByVal vpkFileData As VpkFileData)
 		Me.theArchiveDirectoryInputFileReader = archiveDirectoryFileReader
 		Me.theInputFileReader = vpkFileReader
 		Me.theVpkFileData = vpkFileData
@@ -28,26 +28,23 @@ Public Class VpkFile
 #Region "Methods"
 
 	Public Overrides Sub ReadHeader()
-		Dim inputFileStreamPosition As Long
 		Dim fileOffsetStart As Long
 		Dim fileOffsetEnd As Long
-		'Dim fileOffsetStart2 As Long
-		'Dim fileOffsetEnd2 As Long
 
-		fileOffsetStart = Me.theInputFileReader.BaseStream.Position
+		Me.theInputFileReader.Seek(0, SeekOrigin.Begin)
+		fileOffsetStart = Me.theInputFileReader.Position
 
 		Me.theVpkFileData.id = Me.theInputFileReader.ReadUInt32()
 
-		'NOTE: The arrangement of this 'if" block is weird, but it keeps the order of checks like this: Valve VPK, Vtmb VPK, non-directory multi-file Valve VPK.
-		inputFileStreamPosition = Me.theInputFileReader.BaseStream.Position
 		If Me.theVpkFileData.PackageHasID Then
 			Me.ReadValveVpkHeader()
-		ElseIf Not Me.IsVtmbVpk() Then
-			Me.theInputFileReader.BaseStream.Seek(inputFileStreamPosition, SeekOrigin.Begin)
+		ElseIf Me.IsVtmbVpk() Then
+			Me.ReadVtmbVpkHeader()
+		Else
 			Me.ReadValveVpkHeader()
 		End If
 
-		fileOffsetEnd = Me.theInputFileReader.BaseStream.Position - 1
+		fileOffsetEnd = Me.theInputFileReader.Position - 1
 		Me.theVpkFileData.theFileSeekLog.Add(fileOffsetStart, fileOffsetEnd, "VPK File Header")
 	End Sub
 
@@ -59,49 +56,85 @@ Public Class VpkFile
 			Me.theVpkFileData.unused01 = Me.theInputFileReader.ReadUInt32()
 			Me.theVpkFileData.archiveHashLength = Me.theInputFileReader.ReadUInt32()
 			Me.theVpkFileData.extraLength = Me.theInputFileReader.ReadUInt32()
-			Me.theVpkFileData.unused01 = Me.theInputFileReader.ReadUInt32()
+			Me.theVpkFileData.unused02 = Me.theInputFileReader.ReadUInt32()
+			' The version = 196610 is used by Titanfall and Titanfall 2.
 		ElseIf Me.theVpkFileData.version = 196610 Then
 			Me.theVpkFileData.unused01 = Me.theInputFileReader.ReadUInt32()
 		End If
 
-		Me.theVpkFileData.theDirectoryOffset = Me.theInputFileReader.BaseStream.Position
+		Me.theVpkFileData.theDirectoryOffset = Me.theInputFileReader.Position
 	End Sub
 
-	Private Function IsVtmbVpk() As Boolean
-		Dim theVpkIsVtmb As Boolean = False
-
-		Me.theInputFileReader.BaseStream.Seek(-1, SeekOrigin.End)
+	Private Sub ReadVtmbVpkHeader()
+		Me.theInputFileReader.Seek(-1, SeekOrigin.End)
 		Dim vtmbVpkType As Integer = Me.theInputFileReader.ReadByte()
 		'NOTE: Skip reading vtmbVpkType = 1 because it is just a directory of entries with no data.
 		If vtmbVpkType = 0 OrElse vtmbVpkType = 1 Then
-			Dim directoryEndOffset As Long = Me.theInputFileReader.BaseStream.Seek(-9, SeekOrigin.End)
+			Dim directoryEndOffset As Long = Me.theInputFileReader.Seek(-9, SeekOrigin.End)
 			Me.theVpkFileData.theEntryCount = Me.theInputFileReader.ReadUInt32()
 			Me.theVpkFileData.theDirectoryOffset = Me.theInputFileReader.ReadUInt32()
-			'TODO: It is VTMB VPK package if offsets and lengths match in the directory at end of file.
-			'      Would need to check that offsets and lengths are within file length boundaries.
-			theVpkIsVtmb = True
 			Dim entryPathFileNameLength As UInteger
 			Try
-				Me.theInputFileReader.BaseStream.Seek(Me.theVpkFileData.theDirectoryOffset, SeekOrigin.Begin)
+				Me.theInputFileReader.Seek(Me.theVpkFileData.theDirectoryOffset, SeekOrigin.Begin)
 				For i As UInteger = 0 To CUInt(Me.theVpkFileData.theEntryCount - 1)
 					entryPathFileNameLength = Me.theInputFileReader.ReadUInt32()
-					'entry.thePathFileName = Me.theInputFileReader.ReadChars(CInt(entryPathFileNameLength))
-					'entry.dataOffset = Me.theInputFileReader.ReadUInt32()
-					'entry.dataLength = Me.theInputFileReader.ReadUInt32()
-					Me.theInputFileReader.BaseStream.Seek(entryPathFileNameLength + 8, SeekOrigin.Current)
+					Me.theInputFileReader.Seek(entryPathFileNameLength + 8, SeekOrigin.Current)
 				Next
 				'NOTE: Do not accept 'vtmbVpkType = 1' as a valid VtmbVpk because it is just a directory of entries with no data.
-				If Me.theInputFileReader.BaseStream.Position <> directoryEndOffset OrElse vtmbVpkType = 1 Then
+				If Me.theInputFileReader.Position <> directoryEndOffset OrElse vtmbVpkType = 1 Then
 					Me.theVpkFileData.theEntryCount = 0
-					theVpkIsVtmb = False
 				End If
 			Catch ex As Exception
 				Me.theVpkFileData.theEntryCount = 0
-				theVpkIsVtmb = False
 			End Try
 		End If
+	End Sub
 
-		Return theVpkIsVtmb
+	Private Function IsVtmbVpk() As Boolean
+		Dim vpkIsVtmb As Boolean = False
+		Dim startPosition As Long = Me.theInputFileReader.Position
+		Dim fileLength As Long = Me.theInputFileReader.Length
+
+		Me.theInputFileReader.Seek(-1, SeekOrigin.End)
+		Dim vtmbVpkType As Integer = Me.theInputFileReader.ReadByte()
+		'NOTE: Skip reading vtmbVpkType = 1 because it is just a directory of entries with no data.
+		If vtmbVpkType = 0 Then
+			Dim directoryEndOffset As Long = Me.theInputFileReader.Seek(-9, SeekOrigin.End)
+			Me.theVpkFileData.theEntryCount = Me.theInputFileReader.ReadUInt32()
+			Me.theVpkFileData.theDirectoryOffset = Me.theInputFileReader.ReadUInt32()
+
+			If Me.theVpkFileData.theDirectoryOffset >= fileLength Then
+				Me.theVpkFileData.theEntryCount = 0
+				vpkIsVtmb = False
+			Else
+				vpkIsVtmb = True
+				Dim entryPathFileNameLength As UInteger
+				Try
+					Me.theInputFileReader.Seek(Me.theVpkFileData.theDirectoryOffset, SeekOrigin.Begin)
+					For i As UInteger = 0 To CUInt(Me.theVpkFileData.theEntryCount - 1)
+						entryPathFileNameLength = Me.theInputFileReader.ReadUInt32()
+						' Test against Windows MAXPATH.
+						If entryPathFileNameLength <= 260 Then
+							Me.theInputFileReader.Seek(entryPathFileNameLength + 8, SeekOrigin.Current)
+						Else
+							Me.theVpkFileData.theEntryCount = 0
+							vpkIsVtmb = False
+							Exit For
+						End If
+					Next
+					If Me.theInputFileReader.Position <> directoryEndOffset Then
+						Me.theVpkFileData.theEntryCount = 0
+						vpkIsVtmb = False
+					End If
+				Catch ex As Exception
+					Me.theVpkFileData.theEntryCount = 0
+					vpkIsVtmb = False
+				End Try
+			End If
+		End If
+
+		Me.theInputFileReader.Seek(startPosition, SeekOrigin.Begin)
+		Return vpkIsVtmb
 	End Function
 
 	'Example output:
@@ -204,10 +237,10 @@ Public Class VpkFile
 						entry.dataLength = Me.theInputFileReader.ReadUInt32()
 						entry.endBytes = Me.theInputFileReader.ReadUInt16()
 
-						If entry.preloadByteCount > 0 Then
-							entry.preloadBytesOffset = Me.theInputFileReader.BaseStream.Position
-							Me.theInputFileReader.ReadBytes(entry.preloadByteCount)
-						End If
+					If entry.preloadByteCount > 0 Then
+						entry.preloadBytesOffset = Me.theInputFileReader.Position
+						Me.theInputFileReader.ReadBytes(entry.preloadByteCount)
+					End If
 					End If
 
 					If entryPath = " " Then
@@ -246,7 +279,7 @@ Public Class VpkFile
 		Dim entry As VpkDirectoryEntry
 		Dim entryDataOutputText As New StringBuilder
 
-		Me.theInputFileReader.BaseStream.Seek(Me.theVpkFileData.theDirectoryOffset, SeekOrigin.Begin)
+		Me.theInputFileReader.Seek(Me.theVpkFileData.theDirectoryOffset, SeekOrigin.Begin)
 		For i As UInteger = 0 To CUInt(Me.theVpkFileData.theEntryCount - 1)
 			entry = New VpkDirectoryEntry()
 
@@ -257,7 +290,6 @@ Public Class VpkFile
 
 			entry.crc = 0
 			entry.preloadByteCount = 0
-			'entry.archiveIndex = &H7FFF
 			entry.endBytes = 0
 			entry.isVtmbVpk = True
 
@@ -293,15 +325,15 @@ Public Class VpkFile
 					Me.theOutputFileWriter = New BinaryWriter(outputFileStream, System.Text.Encoding.ASCII)
 
 					If entry.preloadByteCount > 0 Then
-						Me.theArchiveDirectoryInputFileReader.BaseStream.Seek(entry.preloadBytesOffset, SeekOrigin.Begin)
+						Me.theArchiveDirectoryInputFileReader.Seek(entry.preloadBytesOffset, SeekOrigin.Begin)
 						Dim preloadBytes() As Byte
 						preloadBytes = Me.theArchiveDirectoryInputFileReader.ReadBytes(CInt(entry.preloadByteCount))
 						Me.theOutputFileWriter.Write(preloadBytes)
 					End If
 					If entry.archiveIndex = &H7FFF AndAlso Not entry.isVtmbVpk Then
-						Me.theInputFileReader.BaseStream.Seek(Me.theVpkFileData.theDirectoryOffset + Me.theVpkFileData.directoryLength + entry.dataOffset, SeekOrigin.Begin)
+						Me.theInputFileReader.Seek(Me.theVpkFileData.theDirectoryOffset + Me.theVpkFileData.directoryLength + entry.dataOffset, SeekOrigin.Begin)
 					Else
-						Me.theInputFileReader.BaseStream.Seek(entry.dataOffset, SeekOrigin.Begin)
+						Me.theInputFileReader.Seek(entry.dataOffset, SeekOrigin.Begin)
 					End If
 					Dim bytes() As Byte
 					bytes = Me.theInputFileReader.ReadBytes(CInt(entry.dataLength))
@@ -331,8 +363,8 @@ Public Class VpkFile
 
 #Region "Data"
 
-	Private theArchiveDirectoryInputFileReader As BinaryReader
-	Private theInputFileReader As BinaryReader
+	Private theArchiveDirectoryInputFileReader As BufferedBinaryReader
+	Private theInputFileReader As BufferedBinaryReader
 	Private theOutputFileWriter As BinaryWriter
 	Private theVpkFileData As VpkFileData
 
